@@ -15,15 +15,6 @@ namespace MyVSTSFunction
 {
     public static class GetWorkItemList
     {
-        // This is the resource ID for the VSTS application - don't change this.
-        internal const string VstsResourceId = "499b84ac-1321-427f-aa17-267ca6975798";
-
-        internal const string VstsCollectionUrl = "https://account.visualstudio.com"; //change to the URL of your VSTS account; NOTE: This must use HTTPS
-        internal const string ClientId = "<clientId>"; // //update this with your Application ID
-        internal const string Username = "<username>"; // This is your AAD username in the form user@tenant.onmicrosoft.com or user@domain.com if you use custom domains.
-        internal const string Password = "<password>"; // This is your AAD password.
-        internal const string Project = "<project>"; // This is the name of your project
-
         [FunctionName("GetWorkItemList")]
         public static async Task<HttpResponseMessage> Run([HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)]HttpRequestMessage req, TraceWriter log)
         {
@@ -32,9 +23,9 @@ namespace MyVSTSFunction
             var ctx = GetAuthenticationContext(null);
             try
             {
-                var adalCredential = new UserPasswordCredential(Username, Password);
+                var adalCredential = new UserPasswordCredential(Settings.Username, Settings.Password);
 
-                var result = ctx.AcquireTokenAsync(VstsResourceId, ClientId, adalCredential).Result;
+                var result = ctx.AcquireTokenAsync(Settings.VstsResourceId, Settings.ClientId, adalCredential).Result;
                 var bearerAuthHeader = new AuthenticationHeaderValue("Bearer", result.AccessToken);
                 var speechData = GetWorkItemsByQuery(bearerAuthHeader);
                 return new HttpResponseMessage(HttpStatusCode.OK)
@@ -74,7 +65,7 @@ namespace MyVSTSFunction
             var speechJson = "{ \"speech\": \"Sorry, an error occurred.\" }";
             using (var client = new HttpClient())
             {
-                client.BaseAddress = new Uri(VstsCollectionUrl);
+                client.BaseAddress = new Uri(Settings.VstsCollectionUrl);
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
                 client.DefaultRequestHeaders.Add("User-Agent", "VstsRestApi");
@@ -82,7 +73,7 @@ namespace MyVSTSFunction
                 client.DefaultRequestHeaders.Authorization = authHeader;
 
                 //if you already know the query id, then you can skip this step
-                var queryHttpResponseMessage = client.GetAsync(Project + "/_apis/wit/queries/" + path + "?api-version=2.2").Result;
+                var queryHttpResponseMessage = client.GetAsync(Settings.Project + "/_apis/wit/queries/" + path + "?api-version=2.2").Result;
 
                 if (queryHttpResponseMessage.IsSuccessStatusCode)
                 {
@@ -91,7 +82,7 @@ namespace MyVSTSFunction
                     var queryId = queryResult.id;
 
                     //using the queryId in the url, we can execute the query
-                    var httpResponseMessage = client.GetAsync(Project + "/_apis/wit/wiql/" + queryId + "?api-version=2.2").Result;
+                    var httpResponseMessage = client.GetAsync(Settings.Project + "/_apis/wit/wiql/" + queryId + "?api-version=2.2").Result;
 
                     if (httpResponseMessage.IsSuccessStatusCode)
                     {
