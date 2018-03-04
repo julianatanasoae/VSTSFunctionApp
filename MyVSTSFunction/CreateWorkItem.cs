@@ -30,7 +30,9 @@ namespace MyVSTSFunction
 
                 dynamic data = await req.Content.ReadAsAsync<object>();
 
-                var workItemTitle = data?.workItemTitle.ToString();
+                var workItemTitle = data?.result.parameters.workItemTitle.ToString();
+
+                log.Info(workItemTitle);
 
                 var speechData = CreateWI(bearerAuthHeader, workItemTitle);
                 return new HttpResponseMessage(HttpStatusCode.OK)
