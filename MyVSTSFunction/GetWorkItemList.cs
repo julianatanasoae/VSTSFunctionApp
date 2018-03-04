@@ -20,7 +20,7 @@ namespace MyVSTSFunction
         {
             log.Info("C# HTTP trigger function processed a request.");
 
-            var ctx = GetAuthenticationContext(null);
+            var ctx = AuthContext.GetAuthenticationContext(null);
             try
             {
                 var adalCredential = new UserPasswordCredential(Settings.Username, Settings.Password);
@@ -39,24 +39,6 @@ namespace MyVSTSFunction
                 log.Error("Message: " + ex.Message + "\n");
                 return req.CreateErrorResponse(HttpStatusCode.InternalServerError, "Error!");
             }
-        }
-
-        private static AuthenticationContext GetAuthenticationContext(string tenant)
-        {
-            AuthenticationContext ctx;
-            if (tenant != null)
-                ctx = new AuthenticationContext("https://login.microsoftonline.com/" + tenant);
-            else
-            {
-                ctx = new AuthenticationContext("https://login.windows.net/common");
-                if (ctx.TokenCache.Count > 0)
-                {
-                    var homeTenant = ctx.TokenCache.ReadItems().First().TenantId;
-                    ctx = new AuthenticationContext("https://login.microsoftonline.com/" + homeTenant);
-                }
-            }
-
-            return ctx;
         }
 
         public static string GetWorkItemsByQuery(AuthenticationHeaderValue authHeader)
