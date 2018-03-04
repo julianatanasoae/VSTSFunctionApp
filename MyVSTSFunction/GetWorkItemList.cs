@@ -90,7 +90,7 @@ namespace MyVSTSFunction
                             var myWorkItemList = JsonConvert.DeserializeObject<WorkItemList>(result);
                             
                             // I iterate through the list of work items and get each title and state, which I concatenate so the result can be 'spoken'
-                            var response = myWorkItemList.value.Aggregate("", (current, item) => current + (item.fields.SystemTitle + " - " + item.fields.SystemState + ' '));
+                            var response = myWorkItemList.value.Aggregate("", (current, item) => current + (item.fields.SystemTitle + " - " + item.fields.SystemState + ". "));
 
                             // Google Assistant-specific syntax
                             speechJson = "{ \"speech\": \"" + response + "\" }";
