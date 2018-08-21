@@ -55,7 +55,7 @@ namespace MyVSTSFunction
                 client.DefaultRequestHeaders.Authorization = authHeader;
 
                 //if you already know the query id, then you can skip this step
-                var queryHttpResponseMessage = client.GetAsync(Settings.Project + "/_apis/wit/queries/" + path + "?api-version=2.2").Result;
+                var queryHttpResponseMessage = client.GetAsync(Settings.Project + "/_apis/wit/queries/" + path + "?api-version=" + Settings.ApiVersion).Result;
 
                 if (queryHttpResponseMessage.IsSuccessStatusCode)
                 {
@@ -64,7 +64,7 @@ namespace MyVSTSFunction
                     var queryId = queryResult.id;
 
                     //using the queryId in the url, we can execute the query
-                    var httpResponseMessage = client.GetAsync(Settings.Project + "/_apis/wit/wiql/" + queryId + "?api-version=2.2").Result;
+                    var httpResponseMessage = client.GetAsync(Settings.Project + "/_apis/wit/wiql/" + queryId + "?api-version=" + Settings.ApiVersion).Result;
 
                     if (httpResponseMessage.IsSuccessStatusCode)
                     {
@@ -80,7 +80,7 @@ namespace MyVSTSFunction
                         //clean up string of id's
                         var ids = builder.ToString().TrimEnd(',');
 
-                        var getWorkItemsHttpResponse = client.GetAsync("_apis/wit/workitems?ids=" + ids + "&fields=System.Id,System.Title,System.State&asOf=" + workItemQueryResult.asOf + "&api-version=2.2").Result;
+                        var getWorkItemsHttpResponse = client.GetAsync("_apis/wit/workitems?ids=" + ids + "&fields=System.Id,System.Title,System.State&asOf=" + workItemQueryResult.asOf + "&api-version=" + Settings.ApiVersion).Result;
 
                         if (getWorkItemsHttpResponse.IsSuccessStatusCode)
                         {

@@ -11,5 +11,6 @@ namespace MyVSTSFunction
         internal static readonly string Username = Environment.GetEnvironmentVariable("VstsUsername");
         internal static readonly string Password = Environment.GetEnvironmentVariable("VstsPassword");
         internal static readonly string Project = Environment.GetEnvironmentVariable("VstsProject");
+        internal static readonly string ApiVersion = Environment.GetEnvironmentVariable("VstsApiVersion");
     }
 }
