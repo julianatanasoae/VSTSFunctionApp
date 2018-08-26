@@ -23,9 +23,9 @@ namespace MyVSTSFunction
             var ctx = AuthContext.GetAuthenticationContext(null);
             try
             {
-                var adalCredential = new UserPasswordCredential(Settings.Username, Settings.Password);
+                var adalCredential = new UserPasswordCredential(Settings.VstsUsername, Settings.VstsPassword);
 
-                var result = ctx.AcquireTokenAsync(Settings.VstsResourceId, Settings.ClientId, adalCredential).Result;
+                var result = ctx.AcquireTokenAsync(Settings.VstsResourceId, Settings.VstsClientId, adalCredential).Result;
                 var bearerAuthHeader = new AuthenticationHeaderValue("Bearer", result.AccessToken);
                 var speechData = GetWorkItemsByQuery(bearerAuthHeader);
                 return new HttpResponseMessage(HttpStatusCode.OK)
@@ -55,7 +55,7 @@ namespace MyVSTSFunction
                 client.DefaultRequestHeaders.Authorization = authHeader;
 
                 //if you already know the query id, then you can skip this step
-                var queryHttpResponseMessage = client.GetAsync(Settings.Project + "/_apis/wit/queries/" + path + "?api-version=" + Settings.ApiVersion).Result;
+                var queryHttpResponseMessage = client.GetAsync(Settings.VstsProject + "/_apis/wit/queries/" + path + "?api-version=" + Settings.VstsApiVersion).Result;
 
                 if (queryHttpResponseMessage.IsSuccessStatusCode)
                 {
@@ -64,14 +64,14 @@ namespace MyVSTSFunction
                     var queryId = queryResult.id;
 
                     //using the queryId in the url, we can execute the query
-                    var httpResponseMessage = client.GetAsync(Settings.Project + "/_apis/wit/wiql/" + queryId + "?api-version=" + Settings.ApiVersion).Result;
+                    var httpResponseMessage = client.GetAsync(Settings.VstsProject + "/_apis/wit/wiql/" + queryId + "?api-version=" + Settings.VstsApiVersion).Result;
 
                     if (httpResponseMessage.IsSuccessStatusCode)
                     {
                         var workItemQueryResult = httpResponseMessage.Content.ReadAsAsync<WorkItemQueryResult>().Result;
 
                         //now that we have a bunch of work items, build a list of id's so we can get details
-                        var builder = new System.Text.StringBuilder();
+                        var builder = new StringBuilder();
                         foreach (var item in workItemQueryResult.workItems)
                         {
                             builder.Append(item.id.ToString()).Append(",");
@@ -80,7 +80,7 @@ namespace MyVSTSFunction
                         //clean up string of id's
                         var ids = builder.ToString().TrimEnd(',');
 
-                        var getWorkItemsHttpResponse = client.GetAsync("_apis/wit/workitems?ids=" + ids + "&fields=System.Id,System.Title,System.State&asOf=" + workItemQueryResult.asOf + "&api-version=" + Settings.ApiVersion).Result;
+                        var getWorkItemsHttpResponse = client.GetAsync("_apis/wit/workitems?ids=" + ids + "&fields=System.Id,System.Title,System.State&asOf=" + workItemQueryResult.asOf + "&api-version=" + Settings.VstsApiVersion).Result;
 
                         if (getWorkItemsHttpResponse.IsSuccessStatusCode)
                         {

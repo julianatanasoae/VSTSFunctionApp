@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -13,14 +14,15 @@ using Newtonsoft.Json;
 
 namespace MyVSTSFunction
 {
-    public static class CreateWorkItem
+    public static class UpdateWorkItem
     {
-        [FunctionName("CreateWorkItem")]
+        [FunctionName("UpdateWorkItem")]
         public static async Task<HttpResponseMessage> Run([HttpTrigger(AuthorizationLevel.Function, "post", Route = null)]HttpRequestMessage req, TraceWriter log)
         {
             log.Info("C# HTTP trigger function processed a request.");
 
             var ctx = AuthContext.GetAuthenticationContext(null);
+
             try
             {
                 var adalCredential = new UserPasswordCredential(Settings.VstsUsername, Settings.VstsPassword);
@@ -30,11 +32,11 @@ namespace MyVSTSFunction
 
                 dynamic data = await req.Content.ReadAsAsync<object>();
 
-                var workItemTitle = data?.result.parameters.workItemTitle.ToString();
+                var workItemTitle = data?.result.parameters.workItemTitle.ToString();   
 
                 log.Info(workItemTitle);
 
-                var speechData = CreateWI(bearerAuthHeader, workItemTitle);
+                var speechData = UpdateWI(bearerAuthHeader, workItemTitle);
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent(speechData, Encoding.UTF8, "application/json")
@@ -48,61 +50,64 @@ namespace MyVSTSFunction
             }
         }
 
-        public static string CreateWI(AuthenticationHeaderValue authHeader, string workItemTitle)
+        public static string UpdateWI(AuthenticationHeaderValue authHeader, string workItemTitle)
         {
             var speechJson = "{ \"speech\": \"Sorry, an error occurred.\" }";
-            var requestPath = "DefaultCollection/" + Settings.VstsProject + "/_apis/wit/workitems/$Task?api-version=" + Settings.VstsApiVersion;
-            var workItemObject = new[]
+            var workItemId = FindWI(authHeader, workItemTitle);
+            //TODO: update workItemId as done
+
+            var response = "Work item marked as done";
+            speechJson = "{ \"speech\": \"" + response + "\" }";
+            return speechJson;
+        }
+
+        public static int FindWI(AuthenticationHeaderValue authHeader, string workItemTitle)
+        {
+            int workItemId = -1;
+
+            // as of the time of this commit, most api's are on version 4.1, but this one had to be on v4.1-preview.1, so this is why I didn't put Settings.ApiVersion here.
+            // api version consistency ftw
+            var requestPath = Settings.VstsProject + "/_apis/search/workitemsearchresults?api-version=4.1-preview.1";
+
+            var searchItemQuery = new SearchItemQuery();
+            searchItemQuery.searchText = workItemTitle;
+            searchItemQuery.skip = 0;
+            searchItemQuery.top = 1;
+            searchItemQuery.includeFacets = true;
+            searchItemQuery.filters = new Filters
             {
-                new
-                {
-                    op = "add",
-                    path = "/fields/System.Title",
-                    value = workItemTitle
-                },
-                new
-                {
-                    op = "add",
-                    path = "/fields/System.AreaPath",
-                    value = Settings.VstsProject
-                },
-                new
-                {
-                    op = "add",
-                    path = "/fields/System.IterationPath",
-                    value = Settings.VstsProject + "\\Iteration 1"
-                },
-                new
-                {
-                    op = "add",
-                    path = "/fields/System.AssignedTo",
-                    value = Settings.VstsFullUsername
-                }
+                AssignedTo = new List<string>()
+            };
+            searchItemQuery.filters.AssignedTo.Add(Settings.VstsFullUsername);
+            searchItemQuery.orderBy = new List<OrderBy>
+            {
+                new OrderBy { field = "system.id", sortOrder = "ASC" }
             };
 
-            var serializedWorkItemObject = JsonConvert.SerializeObject(workItemObject);
+            
+            var serializedSearchItemQuery = JsonConvert.SerializeObject(searchItemQuery);
 
             using (var client = new HttpClient())
             {
-                client.BaseAddress = new Uri(Settings.VstsCollectionUrl);
+                client.BaseAddress = new Uri(Settings.VstsAlmSearchUrl);
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 client.DefaultRequestHeaders.Add("User-Agent", "VstsRestApi");
                 client.DefaultRequestHeaders.Add("X-TFS-FedAuthRedirect", "Suppress");
                 client.DefaultRequestHeaders.Authorization = authHeader;
 
-                var content = new StringContent(serializedWorkItemObject, Encoding.UTF8, "application/json-patch+json");
-
+                var content = new StringContent(serializedSearchItemQuery, Encoding.UTF8, "application/json");
                 var url = new Uri(client.BaseAddress + requestPath);
-                var queryHttpResponseMessage = client.PatchAsync(url, content).Result;
-                
+                var queryHttpResponseMessage = client.PostAsync(url, content).Result;
+
                 if (queryHttpResponseMessage.IsSuccessStatusCode)
                 {
-                    var response = "Work item created";
-                    speechJson = "{ \"speech\": \"" + response + "\" }";
+                    var queryResult = queryHttpResponseMessage.Content.ReadAsStringAsync().Result;
+                    var searchResultsList = JsonConvert.DeserializeObject<SearchResultsList>(queryResult);
+                    workItemId = searchResultsList.results[0].fields.SystemId;
                 }
             }
-            return speechJson;
+            return workItemId;
         }
     }
 }

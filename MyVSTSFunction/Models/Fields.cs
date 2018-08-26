@@ -4,13 +4,13 @@ namespace MyVSTSFunction
 {
     public class Fields
     {
-        [JsonProperty("System.Id")]
+        [JsonProperty("system.id")]
         public int SystemId { get; set; }
 
-        [JsonProperty("System.State")]
+        [JsonProperty("system.state")]
         public string SystemState { get; set; }
 
-        [JsonProperty("System.Title")]
+        [JsonProperty("system.title")]
         public string SystemTitle { get; set; }
     }
 }
