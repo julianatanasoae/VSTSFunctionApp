@@ -57,38 +57,47 @@ namespace MyVSTSFunction
 
             var requestPath = Settings.VstsProject + "/_apis/wit/workitems/" + workItemId.ToString() + "?api-version=" + Settings.VstsApiVersion;
 
-            // mark work item as done
-            var requestBodyObject = new[]
+            if (workItemId == -1)
             {
+                speechJson = "{ \"speech\": \"Work item not found.\" }";
+            }
+            
+            else
+            {
+
+                // mark work item as done
+                var requestBodyObject = new[]
+                {
                 new
+                    {
+                        op = "add",
+                        path = "/fields/System.State",
+                        value = "Closed"
+                    }
+                };
+
+                var serializedWorkItemObject = JsonConvert.SerializeObject(requestBodyObject);
+
+                using (var client = new HttpClient())
                 {
-                    op = "add",
-                    path = "/fields/System.State",
-                    value = "Closed"
-                }
-            };
+                    client.BaseAddress = new Uri(Settings.VstsCollectionUrl);
+                    client.DefaultRequestHeaders.Accept.Clear();
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    client.DefaultRequestHeaders.Add("User-Agent", "VstsRestApi");
+                    client.DefaultRequestHeaders.Add("X-TFS-FedAuthRedirect", "Suppress");
+                    client.DefaultRequestHeaders.Authorization = authHeader;
 
-            var serializedWorkItemObject = JsonConvert.SerializeObject(requestBodyObject);
+                    var content = new StringContent(serializedWorkItemObject, Encoding.UTF8, "application/json-patch+json");
 
-            using (var client = new HttpClient())
-            {
-                client.BaseAddress = new Uri(Settings.VstsCollectionUrl);
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                client.DefaultRequestHeaders.Add("User-Agent", "VstsRestApi");
-                client.DefaultRequestHeaders.Add("X-TFS-FedAuthRedirect", "Suppress");
-                client.DefaultRequestHeaders.Authorization = authHeader;
+                    var url = new Uri(client.BaseAddress + requestPath);
 
-                var content = new StringContent(serializedWorkItemObject, Encoding.UTF8, "application/json-patch+json");
+                    var queryHttpResponseMessage = client.PatchAsync(url, content).Result;
 
-                var url = new Uri(client.BaseAddress + requestPath);
-
-                var queryHttpResponseMessage = client.PatchAsync(url, content).Result;
-
-                if (queryHttpResponseMessage.IsSuccessStatusCode)
-                {
-                    var response = "Work item marked as done";
-                    speechJson = "{ \"speech\": \"" + response + "\" }";
+                    if (queryHttpResponseMessage.IsSuccessStatusCode)
+                    {
+                        var response = "Work item marked as done";
+                        speechJson = "{ \"speech\": \"" + response + "\" }";
+                    }
                 }
             }
             
