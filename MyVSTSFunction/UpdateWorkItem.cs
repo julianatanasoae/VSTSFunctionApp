@@ -147,7 +147,8 @@ namespace MyVSTSFunction
                 {
                     var queryResult = queryHttpResponseMessage.Content.ReadAsStringAsync().Result;
                     var searchResultsList = JsonConvert.DeserializeObject<SearchResultsList>(queryResult);
-                    workItemId = searchResultsList.results[0].fields.SystemId;
+                    if (searchResultsList.count != 0)
+                        workItemId = searchResultsList.results[0].fields.SystemId;
                 }
             }
             return workItemId;
