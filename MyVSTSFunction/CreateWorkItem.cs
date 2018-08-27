@@ -30,7 +30,7 @@ namespace MyVSTSFunction
 
                 dynamic data = await req.Content.ReadAsAsync<object>();
 
-                var workItemTitle = data?.result.parameters.workItemTitle.ToString();
+                var workItemTitle = data?.queryResult.parameters.workItemTitle.ToString();
 
                 log.Info(workItemTitle);
 
