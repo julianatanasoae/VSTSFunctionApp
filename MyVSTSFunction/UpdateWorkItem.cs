@@ -54,10 +54,44 @@ namespace MyVSTSFunction
         {
             var speechJson = "{ \"speech\": \"Sorry, an error occurred.\" }";
             var workItemId = FindWI(authHeader, workItemTitle);
-            //TODO: update workItemId as done
 
-            var response = "Work item marked as done";
-            speechJson = "{ \"speech\": \"" + response + "\" }";
+            var requestPath = Settings.VstsProject + "/_apis/wit/workitems/" + workItemId.ToString() + "?api-version=" + Settings.VstsApiVersion;
+
+            // mark work item as done
+            var requestBodyObject = new[]
+            {
+                new
+                {
+                    op = "add",
+                    path = "/fields/System.State",
+                    value = "Closed"
+                }
+            };
+
+            var serializedWorkItemObject = JsonConvert.SerializeObject(requestBodyObject);
+
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new Uri(Settings.VstsCollectionUrl);
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                client.DefaultRequestHeaders.Add("User-Agent", "VstsRestApi");
+                client.DefaultRequestHeaders.Add("X-TFS-FedAuthRedirect", "Suppress");
+                client.DefaultRequestHeaders.Authorization = authHeader;
+
+                var content = new StringContent(serializedWorkItemObject, Encoding.UTF8, "application/json-patch+json");
+
+                var url = new Uri(client.BaseAddress + requestPath);
+
+                var queryHttpResponseMessage = client.PatchAsync(url, content).Result;
+
+                if (queryHttpResponseMessage.IsSuccessStatusCode)
+                {
+                    var response = "Work item marked as done";
+                    speechJson = "{ \"speech\": \"" + response + "\" }";
+                }
+            }
+            
             return speechJson;
         }
 
