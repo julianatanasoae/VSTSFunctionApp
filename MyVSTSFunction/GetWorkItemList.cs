@@ -44,7 +44,7 @@ namespace MyVSTSFunction
         public static string GetWorkItemsByQuery(AuthenticationHeaderValue authHeader)
         {
             const string path = "Shared Queries/My Tasks"; //path to the query   
-            var speechJson = "{ \"speech\": \"Sorry, an error occurred.\" }";
+            var speechJson = "{ \"fulfillmentText\": \"Sorry, an error occurred.\" }";
             using (var client = new HttpClient())
             {
                 client.BaseAddress = new Uri(Settings.VstsCollectionUrl);
@@ -93,7 +93,7 @@ namespace MyVSTSFunction
                             var response = myWorkItemList.value.Aggregate("", (current, item) => current + (item.fields.SystemTitle + " - " + item.fields.SystemState + ". "));
 
                             // Google Assistant-specific syntax
-                            speechJson = "{ \"speech\": \"" + response + "\" }";
+                            speechJson = "{ \"fulfillmentText\": \"" + response + "\" }";
                         }
                     }
                 }

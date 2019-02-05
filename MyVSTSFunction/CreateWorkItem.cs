@@ -50,7 +50,7 @@ namespace MyVSTSFunction
 
         public static string CreateWI(AuthenticationHeaderValue authHeader, string workItemTitle)
         {
-            var speechJson = "{ \"speech\": \"Sorry, an error occurred.\" }";
+            var speechJson = "{ \"fulfillmentText\": \"Sorry, an error occurred.\" }";
             var requestPath = "DefaultCollection/" + Settings.VstsProject + "/_apis/wit/workitems/$Task?api-version=" + Settings.VstsApiVersion;
             var workItemObject = new[]
             {
@@ -99,7 +99,7 @@ namespace MyVSTSFunction
                 if (queryHttpResponseMessage.IsSuccessStatusCode)
                 {
                     var response = "Work item created";
-                    speechJson = "{ \"speech\": \"" + response + "\" }";
+                    speechJson = "{ \"fulfillmentText\": \"" + response + "\" }";
                 }
             }
             return speechJson;

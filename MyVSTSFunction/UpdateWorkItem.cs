@@ -52,14 +52,14 @@ namespace MyVSTSFunction
 
         public static string UpdateWI(AuthenticationHeaderValue authHeader, string workItemTitle)
         {
-            var speechJson = "{ \"speech\": \"Sorry, an error occurred.\" }";
+            var speechJson = "{ \"fulfillmentText\": \"Sorry, an error occurred.\" }";
             var workItemId = FindWI(authHeader, workItemTitle);
 
             var requestPath = Settings.VstsProject + "/_apis/wit/workitems/" + workItemId.ToString() + "?api-version=" + Settings.VstsApiVersion;
 
             if (workItemId == -1)
             {
-                speechJson = "{ \"speech\": \"Work item not found.\" }";
+                speechJson = "{ \"fulfillmentText\": \"Work item not found.\" }";
             }
             
             else
@@ -96,7 +96,7 @@ namespace MyVSTSFunction
                     if (queryHttpResponseMessage.IsSuccessStatusCode)
                     {
                         var response = "Work item marked as done";
-                        speechJson = "{ \"speech\": \"" + response + "\" }";
+                        speechJson = "{ \"fulfillmentText\": \"" + response + "\" }";
                     }
                 }
             }
